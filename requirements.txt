@@ -7,3 +7,7 @@ pydantic
 black
 requests
 pika
+httpx
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
