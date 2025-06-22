@@ -27,3 +27,13 @@ def read_product(product_id: int, db: Session = Depends(get_db)):
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
+
+
+@app.patch("/products/{product_id}", response_model=schemas.Product)
+def update_quantity_product(
+    product_id: int, quantities_decreased: int, db: Session = Depends(get_db)
+):
+    db_product = query.update_stock_quantity(db, product_id, quantities_decreased)
+    if db_product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return db_product

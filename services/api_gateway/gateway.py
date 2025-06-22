@@ -23,7 +23,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if is_public_route:
             response = await call_next(request)
             return response
-        print(f"{path}", is_public_route)
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             return Response("Unauthorized: Missing or invalid token", status_code=401)
@@ -51,7 +50,6 @@ client = httpx.AsyncClient()
 @app.post("/api/login")
 async def login(form_data: UserLogin):
     try:
-        print(form_data)
         # call to user_service to authen
         response = await client.post(
             "http://localhost:8001/token",
