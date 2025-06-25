@@ -19,20 +19,50 @@ def get_products(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Product).offset(skip).limit(limit).all()
 
 
-def update_stock_quantity(db: Session, product_id: int, quantities_decreased: int):
-    db_products = (
-        db.query(models.Product).filter(models.Product.id == product_id).first()
-    )
-    if not db_products:
-        raise HTTPException(
-            status_code=404, detail=f"Product with id {product_id} not found"
+def update_stock_quantity(db: Session, product_info: dict):
+    if not product_info:
+        return []
+    print("product_info: ", product_info)
+    product_ids = list(product_info.keys())
+
+    try:
+        db_products = (
+            db.query(models.Product)
+            .filter(models.Product.id.in_(product_ids))
+            .with_for_update()
+            .all()
         )
 
-    if db_products.stock_quantity < quantities_decreased:
+        product_map = {str(p.id): p for p in db_products}
+        if len(db_products) != len(product_ids):
+            found_ids = set(product_map.keys())
+            missing_ids = [pid for pid in product_ids if pid not in found_ids]
+            raise HTTPException(
+                status_code=404,
+                detail=f"The following product IDs were not found: {', '.join(missing_ids)}",
+            )
+
+        for product_id, required_quantity in product_info.items():
+            db_product = product_map[product_id]
+            if db_product.stock_quantity < required_quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Not enough stock for product '{db_product.name}'. "
+                    f"Available: {db_product.stock_quantity}, Required: {required_quantity}",
+                )
+
+        for product_id, quantity_to_subtract in product_info.items():
+            product_map[product_id].stock_quantity -= quantity_to_subtract
+
+        db.commit()
+
+        return db_products
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=400,
-            detail=f"Not enough stock for product {db_products.name}. Available: {db_products.stock_quantity}, Required: {quantities_decreased}",
+            status_code=500, detail=f"An unexpected error occurred: {e}"
         )
-    db_products.stock_quantity -= quantities_decreased
-    db.commit()
-    return db_products
