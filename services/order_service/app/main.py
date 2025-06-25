@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from . import query, models, schemas
 from .database import engine, get_db
-from .utils import send_message_to_rabitmq_sever
+from shared import utils
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -77,7 +77,7 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
                 "user_email": user_email,
                 "total_amount": db_order.total_amount,
             }
-            send_message_to_rabitmq_sever(message, "order_notifications")
+            utils.send_message_to_rabitmq_sever(message, "order_notifications")
 
         return db_order
     except HTTPException as e:
