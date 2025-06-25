@@ -1,7 +1,7 @@
 SERVICES = {
-    "api/users": "http://localhost:8001",
-    "api/products": "http://localhost:8002",
-    "api/orders": "http://localhost:8003",
+    "api/users": "http://127.0.0.1:8001",
+    "api/products": "http://127.0.0.1:8002",
+    "api/orders": "http://127.0.0.1:8003",
 }
 
 PUBLIC_ROUTES = {

@@ -4,7 +4,7 @@ import json
 
 def send_message_to_rabitmq_sever(message: dict, queue_key: str):
     try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+        connection = pika.BlockingConnection(pika.ConnectionParameters("127.0.0.1"))
         channel = connection.channel()
         channel.queue_declare(queue=queue_key, durable=True)
         channel.basic_publish(

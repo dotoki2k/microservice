@@ -26,7 +26,7 @@ def callback(ch, method, properties, body):
 
 
 print(" [*] Waiting for messages. To exit press CTRL+C")
-connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+connection = pika.BlockingConnection(pika.ConnectionParameters("127.0.0.1"))
 channel = connection.channel()
 
 channel.queue_declare(queue="order_notifications", durable=True)
