@@ -52,7 +52,7 @@ async def login(form_data: UserLogin):
     try:
         # call to user_service to authen
         response = await client.post(
-            "http://localhost:8001/token",
+            "http://127.0.0.1:8001/token",
             json={"username": form_data.username, "password": form_data.password},
         )
         response.raise_for_status()
