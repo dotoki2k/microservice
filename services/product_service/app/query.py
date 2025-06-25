@@ -22,7 +22,6 @@ def get_products(db: Session, skip: int = 0, limit: int = 100):
 def update_stock_quantity(db: Session, product_info: dict):
     if not product_info:
         return []
-    print("product_info: ", product_info)
     product_ids = list(product_info.keys())
 
     try:
@@ -55,7 +54,6 @@ def update_stock_quantity(db: Session, product_info: dict):
             product_map[product_id].stock_quantity -= quantity_to_subtract
 
         db.commit()
-
         return db_products
 
     except HTTPException:
