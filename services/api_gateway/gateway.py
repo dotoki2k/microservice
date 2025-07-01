@@ -22,7 +22,7 @@ from .constants import (
 limiter = Limiter(key_func=get_remote_address)
 
 
-# Middleware để kiểm tra JWT
+# Middleware to check the JWT.
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path  # '/api/products/'
