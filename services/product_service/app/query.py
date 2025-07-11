@@ -23,7 +23,7 @@ def update_stock_quantity(db: Session, product_info: dict):
     if not product_info:
         return []
     product_ids = list(product_info.keys())
-
+    print(f"Updating the product quantity ({product_info})")
     try:
         db_products = (
             db.query(models.Product)
