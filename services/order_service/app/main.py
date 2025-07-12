@@ -22,7 +22,7 @@ PRODUCT_TOPIC = "product_topic"
 @app.post("/orders/", response_model=schemas.Order)
 async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
     try:
-        # check user is exist
+        # check user is existed
         async with httpx.AsyncClient() as client:
             user_task = client.get(f"{USER_SERVICE_URL}/{order.user_id}")
             product_tasks = [

@@ -20,7 +20,7 @@ def run_kafka_consumer(consumer_id: str, stop_event: threading.Event):
         consumer_timeout_ms=1000,
     )
     db = create_db_session()
-    print(f"🚀 [{consumer_id}] Đã sẵn sàng xử lý message...")
+    print(f"Consumer [{consumer_id}] is ready...")
 
     while not stop_event.is_set():
         for partition, messages in consumer.poll(timeout_ms=500).items():
