@@ -15,3 +15,4 @@ PUBLIC_ROUTES = {
 
 JWT_SECRET_KEY = "the_default_secret_key"
 JWT_ALGORITHM = "HS256"
+RATE_LIMITED = "5/minute"
