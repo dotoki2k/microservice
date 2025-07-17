@@ -46,11 +46,14 @@ The Order Service is responsible for managing all order-related functionalities,
   1. using ^python3.8 and create a venv
   2. install the requirements:
         
-    `pip install -r requirements.txt`
+    pip install -r requirements.txt
+
   3. start the database with docker:
 
-    `docker run -d --name db -p 5432:5432 -e POSTGRES_PASSWORD=your_password -e POSTGRES_DB=user_db postgres:13`
+    docker run -d --name db -p 5432:5432 -e POSTGRES_PASSWORD=your_password -e POSTGRES_DB=user_db postgres:13
+
   4. active the venv and start the services:
 
-    `./start_service.ps1`
+    ./start_service.ps1
+
   5. connect to `localhost:8000` to access the Gateway API.
