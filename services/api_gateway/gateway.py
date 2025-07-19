@@ -1,14 +1,28 @@
 import httpx
+
 from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.responses import StreamingResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from jose import JWTError, jwt
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from .schemas import UserLogin
-from .constants import SERVICES, PUBLIC_ROUTES, JWT_ALGORITHM, JWT_SECRET_KEY
+from .constants import (
+    SERVICES,
+    PUBLIC_ROUTES,
+    JWT_ALGORITHM,
+    JWT_SECRET_KEY,
+    RATE_LIMITED,
+)
+
+# init Limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
-# Middleware để kiểm tra JWT
+# Middleware to check the JWT.
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path  # '/api/products/'
@@ -41,6 +55,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI()
 app.add_middleware(AuthMiddleware)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # create only a HTTP client
 # best practice to improve performance
@@ -48,7 +64,8 @@ client = httpx.AsyncClient()
 
 
 @app.post("/api/login")
-async def login(form_data: UserLogin):
+@limiter.limit(RATE_LIMITED)
+async def login(request: Request, form_data: UserLogin):
     try:
         # call to user_service to authen
         response = await client.post(
@@ -82,6 +99,7 @@ async def login(form_data: UserLogin):
 
 # --- Route handle all requests ---
 @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@limiter.limit(RATE_LIMITED)
 async def catch_all(request: Request, full_path: str):
     target_url = None
 

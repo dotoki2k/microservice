@@ -11,4 +11,5 @@ httpx
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
+slowapi
 kafka-python
