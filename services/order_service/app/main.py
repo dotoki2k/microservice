@@ -9,10 +9,12 @@ from . import query, models, schemas
 from .database import engine, get_db
 from shared import utils
 from shared.kafka_producer.producer import send_message_to_kafka_server
+from shared.logger.logger import get_logger
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+logger = get_logger("Order service")
 
 USER_SERVICE_URL = "http://127.0.0.1:8001/users"
 PRODUCT_SERVICE_URL = "http://127.0.0.1:8002/products"
@@ -34,6 +36,7 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
             )
             user_response = results[0]
             if user_response.status_code != 200:
+                logger.error(f"User with id {order.user_id} not found.")
                 raise HTTPException(
                     status_code=404, detail=f"User with id {order.user_id} not found"
                 )
@@ -43,7 +46,6 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
             product_update_quantity = {}
             for i, product_response in enumerate(product_responses):
                 item = order.items[i]
-                print("order: ", order)
                 if product_update_quantity.get(item.product_id, None) is None:
                     product_update_quantity[item.product_id] = item.quantity
                 else:
@@ -63,6 +65,9 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
                 product_data = product_response.json()
 
                 if product_data["stock_quantity"] < item.quantity:
+                    logger.error(
+                        f"The product [{item.product_id}] not enough in the stock."
+                    )
                     raise HTTPException(
                         status_code=400,
                         detail=f"Not enough stock for product {item.product_id}",
@@ -81,6 +86,7 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
             db_order = query.create_order(
                 db=db, order=order, order_items=order_items_to_create
             )
+            logger.debug(f"An order [{db_order.id}] created.")
 
         # send notification
         if db_order:
@@ -99,7 +105,9 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(e)
+        logger.exception(
+            f"An error occurred while creating an order ({str(order)}).\nThe error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="An internal error occurred")
 
 
@@ -108,5 +116,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     try:
         return query.get_order_by_id(db=db, order_id=order_id)
     except Exception as e:
-        print(e)
+        logger.exception(
+            f"An error occurred while getting the order [{order_id}]: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="An internal error occurred")
