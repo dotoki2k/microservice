@@ -14,7 +14,7 @@ from .config import ACCESS_TOKEN_EXPIRE_MINUTES
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-logger = get_logger("User service")
+logger = get_logger("User_service")
 
 
 @app.post("/users/", response_model=schemas.User)
@@ -32,7 +32,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     """Get user by user id"""
     db_user = query.get_user(db, user_id=user_id)
     if db_user is None:
-        logger.debug(f"The user [{user_id}] not found.")
+        logger.info(f"The user [id={user_id}] not found.")
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
@@ -54,7 +54,7 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     logger.debug(
-        f"Generate the token for the user [{form_data.username}] successfully."
+        f"Generate the token for the user ({form_data.username}) successfully."
     )
     return {"access_token": access_token, "token_type": "bearer"}
 

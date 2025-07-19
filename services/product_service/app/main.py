@@ -13,7 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 kafka_threads = []
 stop_event = threading.Event()
-logger = get_logger("Product service")
+logger = get_logger("Product_service")
 
 
 @app.on_event("startup")
@@ -60,7 +60,7 @@ def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 def read_product(product_id: int, db: Session = Depends(get_db)):
     db_product = query.get_product(db, product_id=product_id)
     if db_product is None:
-        logger.debug(f"The product [{product_id}] not found in the database.")
+        logger.debug(f"The product [id={product_id}] not found in the database.")
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
@@ -69,6 +69,6 @@ def read_product(product_id: int, db: Session = Depends(get_db)):
 def update_quantity_product(product_info: dict, db: Session = Depends(get_db)):
     db_product = query.update_stock_quantity(db, product_info)
     if db_product is None:
-        logger.debug(f"The product [{str(product_info)}] not found in the database.")
+        logger.debug(f"The product ({str(product_info)}) not found in the database.")
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product

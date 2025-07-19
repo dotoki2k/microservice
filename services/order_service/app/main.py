@@ -14,7 +14,7 @@ from shared.logger.logger import get_logger
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-logger = get_logger("Order service")
+logger = get_logger("Order_service")
 
 USER_SERVICE_URL = "http://127.0.0.1:8001/users"
 PRODUCT_SERVICE_URL = "http://127.0.0.1:8002/products"
@@ -66,7 +66,7 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
 
                 if product_data["stock_quantity"] < item.quantity:
                     logger.error(
-                        f"The product [{item.product_id}] not enough in the stock."
+                        f"The product [id={item.product_id}] not enough in the stock."
                     )
                     raise HTTPException(
                         status_code=400,
@@ -86,7 +86,7 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
             db_order = query.create_order(
                 db=db, order=order, order_items=order_items_to_create
             )
-            logger.debug(f"An order [{db_order.id}] created.")
+            logger.debug(f"An order [id={db_order.id}] created.")
 
         # send notification
         if db_order:
@@ -117,6 +117,6 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
         return query.get_order_by_id(db=db, order_id=order_id)
     except Exception as e:
         logger.exception(
-            f"An error occurred while getting the order [{order_id}]: {str(e)}"
+            f"An error occurred while getting the order [id={order_id}]: {str(e)}"
         )
         raise HTTPException(status_code=500, detail="An internal error occurred")

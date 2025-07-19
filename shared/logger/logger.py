@@ -5,7 +5,7 @@ import os
 from logging.handlers import RotatingFileHandler
 
 
-def get_logger(service_name: str, log_level: int = logging.INFO):
+def get_logger(service_name: str, log_level: int = logging.DEBUG):
     """
     Creates and configures a logger for a specific service.
 
