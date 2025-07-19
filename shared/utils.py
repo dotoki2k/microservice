@@ -3,6 +3,12 @@ import json
 
 
 def send_message_to_rabitmq_sever(message: dict, queue_key: str):
+    """Send the message to the RabitMQ server.
+
+    Args:
+        message: The message context.
+        queue_key: The queue key in the RabitMQ.
+    """
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters("127.0.0.1"))
         channel = connection.channel()

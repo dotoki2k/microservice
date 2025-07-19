@@ -1,13 +1,38 @@
+import threading
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
 from . import query, models, schemas
 from .database import engine, get_db
+from .consumer import run_kafka_consumer
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+kafka_threads = []
+stop_event = threading.Event()
+
+
+@app.on_event("startup")
+def startup_event():
+    print("The product service is initiating ...")
+    num_consumers = 2
+    for i in range(num_consumers):
+        consumer_id = f"Consumer-{i}"
+        thread = threading.Thread(
+            target=run_kafka_consumer, args=(consumer_id, stop_event)
+        )
+        kafka_threads.append(thread)
+        thread.start()
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    print("The product service is shutting down")
+    stop_event.set()
+    for thread in kafka_threads:
+        thread.join()
 
 
 @app.post("/products/", response_model=schemas.Product)

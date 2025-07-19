@@ -6,7 +6,16 @@ from . import models, schemas
 def create_order(
     db: Session, order: schemas.OrderCreate, order_items: List[models.OrderItem]
 ):
+    """
+    Write the order information into database.
+    Args:
+        db: the database session.
+        order: the order detail.
+        order_items: the order items info.
 
+    Returns:
+        The order object.
+    """
     db_order = models.Order(user_id=order.user_id)
     db.add(db_order)
     db.commit()
