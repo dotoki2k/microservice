@@ -9,6 +9,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+from shared.logger.logger import get_logger
 from .schemas import UserLogin
 from .constants import (
     SERVICES,
@@ -20,6 +21,7 @@ from .constants import (
 
 # init Limiter
 limiter = Limiter(key_func=get_remote_address)
+logger = get_logger("Gateway")
 
 
 # Middleware to check the JWT.
@@ -39,6 +41,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return response
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
+            logger.error("Unauthorized: Missing or invalid token.")
             return Response("Unauthorized: Missing or invalid token", status_code=401)
 
         token = auth_header.split(" ")[1]
@@ -47,6 +50,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         except JWTError:
             # Token is not valid (wrong signature, expired,...)
+            logger.error("Unauthorized: Invalid token")
             return Response("Unauthorized: Invalid token", status_code=401)
 
         response = await call_next(request)
@@ -67,7 +71,7 @@ client = httpx.AsyncClient()
 @limiter.limit(RATE_LIMITED)
 async def login(request: Request, form_data: UserLogin):
     try:
-        # call to user_service to authen
+        # call to user_service to authentication
         response = await client.post(
             "http://127.0.0.1:8001/token",
             json={"username": form_data.username, "password": form_data.password},
@@ -77,6 +81,9 @@ async def login(request: Request, form_data: UserLogin):
         return token
 
     except httpx.HTTPStatusError as exc:
+        logger.error(
+            f"An error occurred while login to the Gateway: {exc.response.json()}"
+        )
         return JSONResponse(
             status_code=exc.response.status_code, content=exc.response.json()
         )
@@ -86,10 +93,6 @@ async def login(request: Request, form_data: UserLogin):
 # async def logout(current_user: dict = Depends(get_current_user)):
 #     jti = current_user.get("jti")
 #     exp = current_user.get("exp")
-
-#     # Thêm JTI của token vào blocklist trong Redis
-#     # Set TTL (thời gian sống) cho key bằng đúng thời gian còn lại của token
-#     # để Redis tự động dọn dẹp
 #     time_to_expire = int(exp - time.time())
 #     if time_to_expire > 0:
 #         redis_client.setex(f"jti:{jti}", time_to_expire, "logged_out")
@@ -111,6 +114,7 @@ async def catch_all(request: Request, full_path: str):
         service_path = "/".join(split_path[1:])
         target_url = f"{service_url}/{service_path}"
     if not target_url:
+        logger.debug(f"The endpoint {target_url} not found!")
         raise HTTPException(status_code=404, detail="Endpoint not found")
 
     method = request.method
@@ -131,4 +135,5 @@ async def catch_all(request: Request, full_path: str):
             background=rp_resp.aclose,
         )
     except httpx.RequestError as e:
+        logger.debug(f"The Service unavailable: {e}")
         raise HTTPException(status_code=503, detail=f"Service unavailable: {e}")

@@ -3,6 +3,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
+from shared.logger.logger import get_logger
 from . import query, models, schemas
 from .database import engine, get_db
 from .consumer import run_kafka_consumer
@@ -12,6 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 kafka_threads = []
 stop_event = threading.Event()
+logger = get_logger("Product_service")
 
 
 @app.on_event("startup")
@@ -37,7 +39,15 @@ def shutdown_event():
 
 @app.post("/products/", response_model=schemas.Product)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
-    return query.create_product(db=db, product=product)
+    try:
+        db = query.create_product(db=db, product=product)
+        logger.debug(f"The product ({product}) created.")
+        return db
+    except Exception as ex:
+        logger.exception(
+            f"An error occurred while create a product ({product}). The error: {str(ex)}."
+        )
+        return None
 
 
 @app.get("/products/", response_model=List[schemas.Product])
@@ -50,6 +60,7 @@ def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 def read_product(product_id: int, db: Session = Depends(get_db)):
     db_product = query.get_product(db, product_id=product_id)
     if db_product is None:
+        logger.debug(f"The product [id={product_id}] not found in the database.")
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
@@ -58,5 +69,6 @@ def read_product(product_id: int, db: Session = Depends(get_db)):
 def update_quantity_product(product_info: dict, db: Session = Depends(get_db)):
     db_product = query.update_stock_quantity(db, product_info)
     if db_product is None:
+        logger.debug(f"The product ({str(product_info)}) not found in the database.")
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
